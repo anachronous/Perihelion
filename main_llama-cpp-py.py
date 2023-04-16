@@ -43,6 +43,7 @@ async def ping(interaction):
 @client.event
 async def on_ready():
     await tree.sync()
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="Perihelion"))
     print("Ready!")
     
 # we run the bot with the token from the json file
