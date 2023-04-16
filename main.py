@@ -14,7 +14,7 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 # load the model
-model = "/media/anachronox/Volume/dalai/dalai/models/alpaca/models/7B/ggml-model-q4_0.bin"
+model = json.load(open("config.json"))["model"]
 llm = Llama(model_path=model)
 
 # now the slash command to pass the prompt to alpaca30b
