@@ -1,12 +1,12 @@
-# discord bot that connects to alpaca30b via pyllamacpp and supports slash commands
+# discord bot that connects to alpaca30b via langchain and supports slash commands
 import discord
 from discord import app_commands
 # we use json to store bot related data
 import json
 # we also want to get stuff from apis
 import requests
-# now the necessary imports for pyllamacpp
-from pyllamacpp.model import Model
+# now the necessary imports for llama-cpp-python
+from llama_cpp import Llama
 
 # necessary discord stuff
 intents = discord.Intents.default()
@@ -14,22 +14,21 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 # load the model
-modellocation = json.load(open("config.json"))["model"]
-
-def new_text_callback(text: str):
-    print(text, end="", flush=True)
-
-model = Model(ggml_model=modellocation, n_ctx=512)
+model = json.load(open("config.json"))["model"]
+llm = Llama(model_path=model)
 
 # now the slash command to pass the prompt to alpaca30b
 @tree.command(name = "alpaca30b", description = "Get a response from alpaca30b")
 async def alpaca7b(interaction, prompt: str):
     print(prompt)
-    
-    res = model.generate(prompt, n_predict=55)
-    
+    ogprompt = prompt
+    # get the prompt into the right format (Q: prompt A: )
+    prompt = "Q: " + prompt + " A: "
+    await interaction.response.send_message("Your prompt: " + ogprompt)
+    # get the prompt from the user which is everything after the command they sent in python
+    output = llm(prompt, max_tokens=450, stop=["Q: ", "\n"], echo=True)
     # the output is in json format so we need to extract the text, which is in the text key under choices and everything after A:
-    await interaction.followup.send(res)
+    await interaction.followup.send(output["choices"][0]["text"].split("A: ")[1])
 
 @tree.command(name = "pyping", description = "Responds with Pong")
 async def ping(interaction):
