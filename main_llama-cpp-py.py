@@ -17,8 +17,8 @@ tree = app_commands.CommandTree(client)
 model = json.load(open("config.json"))["model"]
 llm = Llama(model_path=model)
 
-# now the slash command to pass the prompt to alpaca30b
-@tree.command(name = "alpaca30b", description = "Get a response from alpaca30b")
+# now the slash command to pass the prompt to alpaca7b
+@tree.command(name = "alpaca30b", description = "Get a response from alpaca7b")
 async def alpaca7b(interaction, prompt: str):
     print(prompt)
     ogprompt = prompt
