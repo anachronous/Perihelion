@@ -22,6 +22,12 @@ llm = Llama(model_path=model)
 async def alpaca7b(interaction, prompt: str):
     print(prompt)
     ogprompt = prompt
+    
+    # check if the channel id is 768600365602963496
+    if interaction.channel_id == 768600365602963496:
+        # if it is send an ephemeral message to the user, saying that they can't use this command in this channel and return
+        await interaction.response.send_message("You can't use this command in this channel! Move to #bot-fun instead.", ephemeral=True)
+        return
     # get the prompt into the right format (Q: prompt A: )
     prompt = "Q: " + prompt + " A: "
     await interaction.response.send_message("Your prompt: " + ogprompt)
