@@ -1,12 +1,21 @@
 # discord bot that connects to alpaca30b via langchain and supports slash commands
 import discord
 from discord import app_commands
+import math
+import string
+import embeds
+import zimath as zim
+import zidice as zid
+import random
 # we use json to store bot related data
 import json
 # we also want to get stuff from apis
 import requests
 # now the necessary imports for llama-cpp-python
 from llama_cpp import Llama
+
+# flag to check if alpaca13b is in use
+alpaca13b_in_use = False
 
 # necessary discord stuff
 intents = discord.Intents.default()
@@ -18,16 +27,25 @@ model = json.load(open("config.json"))["model"]
 llm = Llama(model_path=model)
 
 # now the slash command to pass the prompt to alpaca7b
-@tree.command(name = "alpaca7b", description = "Get a response from alpaca7b")
-async def alpaca7b(interaction, prompt: str):
+@tree.command(name = "alpaca13b", description = "Get a response from alpaca13b")
+async def alpaca13b(interaction, prompt: str):
     print(prompt)
     ogprompt = prompt
+    
+    # check if alpaca13b is in use
+    if (alpaca13b_in_use):
+        # if it is send an ephemeral message to the user, saying that it's in use and return
+        await interaction.response.send_message("alpaca13b is in use! Try again later.", ephemeral=True)
+        return
     
     # check if the channel id is 768600365602963496
     if interaction.channel_id == 768600365602963496:
         # if it is send an ephemeral message to the user, saying that they can't use this command in this channel and return
         await interaction.response.send_message("You can't use this command in this channel! Move to #bot-fun instead.", ephemeral=True)
         return
+    
+    # set alpaca13b_in_use to true
+    alpaca13b_in_use = True
     # get the prompt into the right format (Q: prompt A: )
     prompt = "Q: " + prompt + " A: "
     await interaction.response.send_message("Your prompt: " + ogprompt)
@@ -35,6 +53,8 @@ async def alpaca7b(interaction, prompt: str):
     output = llm(prompt, max_tokens=450, stop=["Q: ", "\n"], echo=True)
     # the output is in json format so we need to extract the text, which is in the text key under choices and everything after A:
     await interaction.followup.send(output["choices"][0]["text"].split("A: ")[1])
+    # set alpaca13b_in_use to false
+    alpaca13b_in_use = False
 
 @tree.command(name = "pyping", description = "Responds with Pong")
 async def ping(interaction):
@@ -46,6 +66,9 @@ async def ping(interaction):
 
 # help command for the dice commands, that explains the notation
 # we do this with an embed
+@tree.command(name = "dicehelp", description = "Arguments for the dice commands")
+async def dicehelp(interaction):
+    await interaction.response.send_message(embed=embeds.dice_help(), ephemeral=True)
 
 @tree.command(name = "probroll", description = "Calculates the probability of rolling the given number for the given dice roll.")
 async def probroll(interaction, roll: str, result: int):
@@ -133,8 +156,11 @@ async def probrollslow(interaction, flag: str, dice_notation: str, target: int, 
     # we now send the probability as a message in percent rounded to 3 decimal places
     await interaction.followup.send('The probability is ' + str(round(probability * 100, 3)) + '%' + ' for ' + str(times) + ' rolls of (' + dice_notation + ')' + ' with a target of ' + str(target) + ' and a flag of ' + flag + ".")
     
-# dpr calculation
-# @tree.command(name = "dpr", description = "Calculates the damage per round of a character.")
+# dpr calculation using simulation
+# takes a list of dice notations, a to hit value, an ac value, a crit range and a number of simulations and returns the dpr
+# @tree.command(name = "dprslow", description = "Calculates the dpr by simulating it a lot of times.")
+# async def dprslow(interaction, damage: str, to_hit: int, ac: int, crit_range: str, meaningful_crits: bool, times: int):
+    
 
     
 @client.event
