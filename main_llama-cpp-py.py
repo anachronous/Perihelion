@@ -6,6 +6,7 @@ import string
 import embeds
 import zimath as zim
 import zidice as zid
+import templates
 import random
 # we use json to store bot related data
 import json
@@ -25,6 +26,7 @@ llm = Llama(model_path=model)
 
 # now the slash command to pass the prompt to alpaca7b
 @tree.command(name = "alpaca13b", description = "Get a response from alpaca13b")
+# @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
 async def alpaca13b(interaction, prompt: str):
     print(prompt)
     ogprompt = prompt
@@ -42,7 +44,34 @@ async def alpaca13b(interaction, prompt: str):
     output = llm(prompt, max_tokens=450, stop=["Q: ", "\n"], echo=True)
     # the output is in json format so we need to extract the text, which is in the text key under choices and everything after A:
     await interaction.followup.send(output["choices"][0]["text"].split("A: ")[1])
+    
+# alpaca13b experimental command that gets a prompt from the user and then applies a template
+@tree.command(name = "alpaca13bexp", description = "Get a response from alpaca13b with a template.")
+async def alpaca13bexp(interaction, prompt: str, template: str):
+    print(prompt)
+    print(template)
+    # check if the channel id is 768600365602963496
+    if interaction.channel_id == 768600365602963496:
+        # if it is send an ephemeral message to the user, saying that they can't use this command in this channel and return
+        await interaction.response.send_message("You can't use this command in this channel! Move to #bot-fun instead.", ephemeral=True)
+        return
+    
+    # check which template the user wants to use
+    # templates are stored in the templates.py file as functions that return a string with the prompt applied to the template
+    if template == "instruction":
+        await interaction.response.send_message("Your prompt: " + prompt)
+        output = llm(templates.instruction(prompt), max_tokens=450, stop=["Q: ", "\n"], echo=True)["choices"][0]["text"].split("A: ")[1]
+        
+    # if the user didn't enter a valid template, send an ephemeral message to the user and return
+    else:
+        await interaction.response.send_message("That's not a valid template! Use /alpaca13bexphelp for a list of templates.", ephemeral=True)
+        return
 
+    # send the output to the user
+    await interaction.followup.send(output)
+    
+        
+    
 @tree.command(name = "pyping", description = "Responds with Pong")
 async def ping(interaction):
     await interaction.response.send_message("Pong! (From Perihelion)")
@@ -147,7 +176,7 @@ async def probrollslow(interaction, flag: str, dice_notation: str, target: int, 
 # takes a list of dice notations, a to hit value, an ac value, a crit range and a number of simulations and returns the dpr
 # @tree.command(name = "dprslow", description = "Calculates the dpr by simulating it a lot of times.")
 # async def dprslow(interaction, damage: str, to_hit: int, ac: int, crit_range: str, meaningful_crits: bool, times: int):
-    
+        
 
     
 @client.event
