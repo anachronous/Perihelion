@@ -13,7 +13,7 @@ import json
 # we also want to get stuff from apis
 import requests
 # now the necessary imports for llama-cpp-python
-from llama_cpp import Llama
+# from llama_cpp import Llama
 
 # necessary discord stuff
 intents = discord.Intents.default()
@@ -21,12 +21,13 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 # load the model
-model = json.load(open("config.json"))["model"]
-llm = Llama(model_path=model)
+# model = json.load(open("config.json"))["model"]
+# llm = Llama(model_path=model)
 
 # now the slash command to pass the prompt to alpaca7b
-@tree.command(name = "alpaca13b", description = "Get a response from alpaca13b")
+# @tree.command(name = "alpaca13b", description = "Get a response from alpaca13b")
 # @commands.max_concurrency(1, per=commands.BucketType.default, wait=False)
+"""
 async def alpaca13b(interaction, prompt: str):
     print(prompt)
     ogprompt = prompt
@@ -70,7 +71,7 @@ async def alpaca13bexp(interaction, prompt: str, template: str):
     # send the output to the user
     await interaction.followup.send(output)
     
-        
+"""        
     
 @tree.command(name = "pyping", description = "Responds with Pong")
 async def ping(interaction):
@@ -177,7 +178,61 @@ async def probrollslow(interaction, flag: str, dice_notation: str, target: int, 
 # @tree.command(name = "dprslow", description = "Calculates the dpr by simulating it a lot of times.")
 # async def dprslow(interaction, damage: str, to_hit: int, ac: int, crit_range: str, meaningful_crits: bool, times: int):
         
+# Scryfall card search
+@tree.command(name = "scryfall", description = "Searches for a card on Scryfall.")
+async def scryfall(interaction, card_name: str):
+    # returns the first card found on scryfall with the given name
+    # output is card image, name, type, oracle text, mana cost, power, toughness, loyalty, set, collector number, and price
+    
+    # we use the scryfall api to get the card
+    # card_name needs + instead of spaces
+    card_name = card_name.replace(" ", "+")
+    response = requests.get("https://api.scryfall.com/cards/named?fuzzy=" + card_name)
+    # check if the response is not ok
+    if response.status_code == 404:
+        # if it is send an ephemeral message to the user and return
+        await interaction.response.send_message("Card not found!", ephemeral=True)
+        return
 
+    # we get the json from the response
+    card = response.json()
+    # we now build the embed
+    embed = discord.Embed(
+        title=card["name"],
+        description=card["type_line"],
+        url=card["scryfall_uri"],
+    )
+    embed.add_field(name="Card Text", value=card["oracle_text"])
+    embed.set_thumbnail(url=card["image_uris"]["normal"])
+    # the embed then is sent to the user
+    await interaction.response.send_message(embed=embed)
+    
+# Ygoprodeck card search
+@tree.command(name = "ygoprodeck", description = "Searches for a card on Ygoprodeck.")
+async def ygoprodeck(interaction, card_name: str):
+    # similar to scryfall but with ygoprodeck
+    
+    # we use the ygoprodeck api to get the card and we need %20 instead of spaces
+    card_name = card_name.replace(" ", "%20")
+    response = requests.get("https://db.ygoprodeck.com/api/v7/cardinfo.php?name=" + card_name)
+    # check if the response is not ok
+    if response.status_code == 404:
+        # if it is send an ephemeral message to the user and return
+        await interaction.response.send_message("Card not found!", ephemeral=True)
+        return
+    
+    # we get the json from the response and make the embed based on the first card in the list
+    card = response.json()["data"][0]
+    embed = discord.Embed(
+        title=card["name"],
+        description=card["type"],
+        url=card["card_images"][0]["image_url"],
+    )
+    embed.add_field(name="Card Text", value=card["desc"])
+    embed.set_thumbnail(url=card["card_images"][0]["image_url"])
+    # the embed then is sent to the user
+    await interaction.response.send_message(embed=embed)
+    
     
 @client.event
 async def on_ready():
